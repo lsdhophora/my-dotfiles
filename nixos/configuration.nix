@@ -2,7 +2,7 @@
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
-{ config, pkgs, lib, inputs, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
   imports =
@@ -27,11 +27,11 @@
     kernelModules = [ "amd_pstate" ];
     kernelPackages = pkgs.linuxPackages_latest;
   };
+  
+  
+  documentation.nixos.enable = false;
 
   networking.hostName = "flowerpot"; # Define your hostname.
-  # Pick only one of the below networking options.
-  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
-  # networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
 
   # Set your time zone.
   time.timeZone = "Asia/Shanghai";
@@ -103,6 +103,8 @@
        emacs-pgtk
        gnome-themes-extra
        gnome-tweaks
+       nixd
+       nixfmt
      ];
    };
 
@@ -120,8 +122,6 @@
      texlab
      inputs.agenix.packages."${system}".default
    ];
-
-  documentation.nixos.enable = false;
 
    # dae service
 

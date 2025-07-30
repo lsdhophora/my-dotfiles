@@ -72,3 +72,18 @@
 ;; 添加条件化建议（使用 :around 类型）
 (with-eval-after-load 'org
   (advice-add 'org-open-file :around #'my/org-open-file-dired-full-window))
+
+(use-package nix-mode
+  :ensure t
+  :mode "\\.nix\\'"
+  :hook ((nix-mode . lsp-deferred)
+         (nix-mode . (lambda () (add-hook 'before-save-hook #'lsp-format-buffer nil t))))
+  :config
+  (require 'lsp-mode)
+  (lsp-register-client
+   (make-lsp-client
+    :new-connection (lsp-stdio-connection "nixd")
+    :major-modes '(nix-mode)
+    :priority 0
+    :server-id 'nixd))
+  (setq lsp-nix-nixd-formatting-command '("nixfmt")))
