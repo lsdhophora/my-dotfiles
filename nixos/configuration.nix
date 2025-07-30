@@ -125,6 +125,8 @@
     enableDefaultPackages = true;
     packages = with pkgs; [
       noto-fonts-cjk-sans
+      noto-fonts
+      noto-fonts-extra
       noto-fonts-emoji
     ];
     fontconfig = {
