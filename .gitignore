@@ -1,0 +1,11 @@
+/**
+!/.gitignore
+!/nixos/
+!/nixos/**
+!/emacs/
+!/emacs/init.el
+!/emacs/custom.el
+!/emacs/dashboard.org
+!/dae/
+!/dae/example.dae
+!/README.org

@@ -1,0 +1,4 @@
+* [[file:~/Documents][Documents Folder]]
+* [[file:~/][Home Folder]]
+* [[file:~/.config/emacs/][Emacs Config Folder]]
+* [[file:~/.config/nixos/][Nixos Config Folder]]
