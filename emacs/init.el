@@ -80,10 +80,11 @@
          (nix-mode . (lambda () (add-hook 'before-save-hook #'lsp-format-buffer nil t))))
   :config
   (require 'lsp-mode)
+  (setq lsp-enable-snippet nil)
   (lsp-register-client
    (make-lsp-client
-    :new-connection (lsp-stdio-connection "nixd")
+    :new-connection (lsp-stdio-connection "nil")
     :major-modes '(nix-mode)
     :priority 0
-    :server-id 'nixd))
-  (setq lsp-nix-nixd-formatting-command '("nixfmt")))
+    :server-id 'nil))
+  (setq lsp-nix-nil-formatting-command '("nixfmt")))
