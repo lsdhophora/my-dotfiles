@@ -68,6 +68,7 @@
       tali # poker game
       totem # video player
       yelp
+      gnome-weather
     ]
   );
 
