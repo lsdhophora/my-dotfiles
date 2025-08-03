@@ -88,3 +88,6 @@
     :priority 0
     :server-id 'nil))
   (setq lsp-nix-nil-formatting-command '("nixfmt")))
+
+
+(setq org-startup-truncated nil)
