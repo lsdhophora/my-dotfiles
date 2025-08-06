@@ -91,3 +91,25 @@
 
 
 (setq org-startup-truncated nil)
+
+(use-package org-download
+  :ensure t
+  :hook (org-mode . org-download-enable)
+  :bind (:map org-mode-map
+        ("C-c y" . org-download-yank)
+        ("C-c s" . org-download-screenshot))
+  :config
+  (setq org-download-annotate-function (lambda (_link) ""))
+  (setq org-download-link-format "[[file:%s]]")
+  ;; 重写插入逻辑，移除所有换行
+  (defun my-org-download-insert-link (link filename)
+    "Insert link without any newlines."
+    (insert (format org-download-link-format filename)))
+  (advice-add 'org-download-insert-link :override #'my-org-download-insert-link)
+  (setq org-download-image-dir "./images"))
+
+(use-package magit
+  :ensure t
+  :bind (("C-x g" . magit-status))  ;; 绑定 C-x g 到 magit-status
+  :config
+  (setq magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))

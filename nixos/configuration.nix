@@ -82,6 +82,7 @@
       tree
       fastfetch
       imagemagick
+      wl-clipboard
       emacs-pgtk
       gnome-themes-extra
       gnome-tweaks
