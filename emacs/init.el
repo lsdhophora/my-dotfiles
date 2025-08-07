@@ -94,19 +94,30 @@
 
 (use-package org-download
   :ensure t
-  :hook (org-mode . org-download-enable)
+  :after org
+  :hook
+  ((org-mode . org-download-enable)
+   (org-mode . (lambda ()
+                 ;; 仅当 org-download-image-dir 已定义且不为空时检查目录
+                 (when (and (boundp 'org-download-image-dir)
+                            org-download-image-dir
+                            (not (string-empty-p org-download-image-dir)))
+                   (unless (file-exists-p org-download-image-dir)
+                     (make-directory org-download-image-dir t))))))
   :bind (:map org-mode-map
-        ("C-c y" . org-download-yank)
-        ("C-c s" . org-download-screenshot))
+              ("C-c y" . org-download-yank))
   :config
+  ;; 设置默认图片保存目录（仅当未通过文件局部变量定义时使用）
+  (setq-default org-download-image-dir "./images")
+  ;; 移除换行和多余标注
   (setq org-download-annotate-function (lambda (_link) ""))
+  ;; 设置图片链接格式
   (setq org-download-link-format "[[file:%s]]")
   ;; 重写插入逻辑，移除所有换行
   (defun my-org-download-insert-link (link filename)
     "Insert link without any newlines."
     (insert (format org-download-link-format filename)))
-  (advice-add 'org-download-insert-link :override #'my-org-download-insert-link)
-  (setq org-download-image-dir "./images"))
+  (advice-add 'org-download-insert-link :override #'my-org-download-insert-link))
 
 (use-package magit
   :ensure t
