@@ -3,61 +3,62 @@
 {
   home.username = "lophophora";
   home.homeDirectory = "/home/lophophora";
-
   home.stateVersion = "25.11";
 
-  # 安装 yq
-  home.packages = with pkgs; [
-    yq-go # 确保 yq-go 已安装
-  ];
-
-  # 修补 rime_ice.schema.yaml 的 editor.bindings
+  # Clone rime-ice from GitHub
   home.file.".config/ibus/rime" = {
-    source =
-      let
-        rimeIce = pkgs.fetchFromGitHub {
-          owner = "iDvel";
-          repo = "rime-ice";
-          rev = "main";
-          sha256 = "sha256-iL5QMWxc93Avy/MuZ+MgT5GCbuGyv8s0rKD7U9eTGX8=";
-        };
-        # 使用 runCommand 修补 rime_ice.schema.yaml
-        patchedRimeIce = pkgs.runCommand "rime-ice-patched" { nativeBuildInputs = [ pkgs.yq-go ]; } ''
-          # 创建输出目录
-          mkdir -p $out
-
-          # 复制 rime-ice 文件到输出目录
-          cp -r ${rimeIce}/* $out/
-
-          # 使用 yq 删除 schema.editor.bindings 并替换顶层的 editor.bindings
-          yq e 'del(.schema.editor.bindings) | del(.editor.bindings) | .editor.bindings = {
-            "space": "commit_raw_input",
-            "Return": "confirm",
-            "Control+Return": "commit_script_text",
-            "Control+Shift+Return": "commit_comment",
-            "BackSpace": "revert",
-            "Delete": "delete",
-            "Control+BackSpace": "back_syllable",
-            "Control+Delete": "delete_candidate",
-            "Escape": "cancel"
-          }' ${rimeIce}/rime_ice.schema.yaml > $out/rime_ice.schema.yaml.tmp
-
-          # 移动临时文件到最终位置
-          mv $out/rime_ice.schema.yaml.tmp $out/rime_ice.schema.yaml
-
-          # 确保输出文件权限正确
-          chmod 644 $out/rime_ice.schema.yaml
-        '';
-      in
-      patchedRimeIce;
+    source = pkgs.fetchFromGitHub {
+      owner = "iDvel";
+      repo = "rime-ice";
+      rev = "main";
+      sha256 = "sha256-iL5QMWxc93Avy/MuZ+MgT5GCbuGyv8s0rKD7U9eTGX8=";
+    };
     recursive = true;
   };
 
-  # 管理 ibus_rime.yaml
+  # Create rime_ice.custom.yaml to patch editor.bindings
+  home.file.".config/ibus/rime/rime_ice.custom.yaml".text = ''
+    patch:
+      editor/bindings:
+        space: commit_raw_input
+        Return: confirm
+        Control+Return: commit_script_text
+        Control+Shift+Return: commit_comment
+        BackSpace: revert
+        Delete: delete
+        Control+BackSpace: back_syllable
+        Control+Delete: delete_candidate
+        Escape: cancel
+  '';
+
+  # Configure default.custom.yaml, removing schema_list
+  home.file.".config/ibus/rime/default.custom.yaml".text = ''
+    patch:
+      ascii_composer/good_old_caps_lock: true
+      ascii_composer/switch_key:
+        Caps_Lock: clear
+        Shift_L: noop
+        Shift_R: noop
+        Control_L: inline
+        Control_R: noop
+      key_binder/bindings:
+        # Emacs style key bindings
+        - { when: composing, accept: Control+p, send: Up }          # Previous candidate
+        - { when: composing, accept: Control+n, send: Down }        # Next candidate
+        - { when: composing, accept: Control+f, send: Right }       # Move cursor forward
+        - { when: composing, accept: Control+b, send: Left }        # Move cursor backward
+        - { when: composing, accept: Control+a, send: Home }        # Move to start of input
+        - { when: composing, accept: Control+e, send: End }         # Move to end of input
+        - { when: composing, accept: Control+d, send: Delete }      # Delete character after cursor
+        - { when: composing, accept: BackSpace, send: BackSpace }   # Delete character before cursor
+        - { when: composing, accept: Control+k, send: delete_to_end }  # Delete to end
+  '';
+
+  # Override ibus_rime.yaml
   home.file.".config/ibus/rime/ibus_rime.yaml" = {
     text = ''
       __build_info:
-        rime_version: 1.14.0
+        rime_version: ${pkgs.librime.version}
         timestamps:
           ibus_rime: 0
           ibus_rime.custom: 0
@@ -68,9 +69,15 @@
         inline_preedit: true
         preedit_style: preview
     '';
-    onChange = ''
-      mkdir -p $HOME/.config/ibus/rime
-      chown lophophora:users $HOME/.config/ibus/rime
-    '';
   };
+
+  # Add activation script to clean .config/ibus/rime except rime_ice.userdb and ensure only one ibus_rime.yaml
+  home.activation.cleanRimeConfig = config.lib.dag.entryBefore [ "writeBoundary" ] ''
+    if [ -d "$HOME/.config/ibus/rime" ]; then
+      # Remove all ibus_rime.yaml files first
+      ${pkgs.findutils}/bin/find "$HOME/.config/ibus/rime" -maxdepth 1 -name 'ibus_rime.yaml' -exec rm -f {} +
+      # Remove other files except rime_ice.userdb
+      ${pkgs.findutils}/bin/find "$HOME/.config/ibus/rime" -maxdepth 1 -not -name 'rime_ice.userdb' -not -name 'ibus_rime.yaml' -exec rm -rf {} +
+    fi
+  '';
 }

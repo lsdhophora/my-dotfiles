@@ -1,10 +1,17 @@
 ;; 基本设置
-(setq initial-buffer-choice "~/.config/emacs/dashboard.org")
+;; 自定义 initial-buffer-choice
+(setq initial-buffer-choice
+      (lambda ()
+        (if (or (buffer-file-name)
+                (eq major-mode 'dired-mode))
+            (current-buffer)
+          (find-file "~/.config/emacs/dashboard.org"))))
+
 (setq custom-file "~/.config/emacs/custom.el")
 (load custom-file 'noerror)
 (add-hook 'find-file-hook
           (lambda ()
-            (when (string= (buffer-file-name) (expand-file-name "~/.emacs.d/dashboard.org"))
+            (when (string= (buffer-file-name) (expand-file-name "~/.config/emacs/dashboard.org"))
               (setq-local auto-save-default nil))))
 
 ;; 禁用工具栏和滚动条
@@ -88,36 +95,6 @@
     :priority 0
     :server-id 'nil))
   (setq lsp-nix-nil-formatting-command '("nixfmt")))
-
-
-(setq org-startup-truncated nil)
-
-(use-package org-download
-  :ensure t
-  :after org
-  :hook
-  ((org-mode . org-download-enable)
-   (org-mode . (lambda ()
-                 ;; 仅当 org-download-image-dir 已定义且不为空时检查目录
-                 (when (and (boundp 'org-download-image-dir)
-                            org-download-image-dir
-                            (not (string-empty-p org-download-image-dir)))
-                   (unless (file-exists-p org-download-image-dir)
-                     (make-directory org-download-image-dir t))))))
-  :bind (:map org-mode-map
-              ("C-c y" . org-download-yank))
-  :config
-  ;; 设置默认图片保存目录（仅当未通过文件局部变量定义时使用）
-  (setq-default org-download-image-dir "./images")
-  ;; 移除换行和多余标注
-  (setq org-download-annotate-function (lambda (_link) ""))
-  ;; 设置图片链接格式
-  (setq org-download-link-format "[[file:%s]]")
-  ;; 重写插入逻辑，移除所有换行
-  (defun my-org-download-insert-link (link filename)
-    "Insert link without any newlines."
-    (insert (format org-download-link-format filename)))
-  (advice-add 'org-download-insert-link :override #'my-org-download-insert-link))
 
 (use-package magit
   :ensure t
