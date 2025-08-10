@@ -89,7 +89,28 @@
     ];
   };
 
-  programs.fish.enable = true;
+  programs.fish = {
+    enable = true;
+    promptInit = ''
+       function fish_prompt
+          set -l nix_shell_info (
+              if test -n "$IN_NIX_SHELL"
+                  echo -n "<nix-shell> "
+              end
+          )
+          echo -n -s "$nix_shell_info"
+          set_color green
+          echo -n -s "~>"
+          set_color normal
+          echo -n " "
+          set -l git_status (__fish_git_prompt "%s")
+          if test -n "$git_status"
+              echo -n -s "($git_status)"
+              echo -n " "
+          end
+      end
+    '';
+  };
 
   programs.firefox.enable = true;
 
