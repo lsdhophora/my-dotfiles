@@ -83,7 +83,9 @@
       fastfetch
       imagemagick
       wl-clipboard
-      emacs-pgtk
+      ((emacsPackagesFor pkgs.emacs-pgtk).emacsWithPackages (epkgs: [
+        epkgs.pdf-tools
+      ]))
       gnome-themes-extra
       gnome-tweaks
     ];

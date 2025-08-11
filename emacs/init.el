@@ -47,19 +47,28 @@
 (use-package tex
   :ensure auctex
   :config
-  (setq TeX-auto-save t) ; 自动保存
-  (setq TeX-parse-self t) ; 自动解析
-  (setq TeX-PDF-mode t) ; 默认 PDF 输出
-  (setq TeX-command-default "XeLaTeX") ; 默认使用 XeLaTeX
-  (setq-default TeX-engine 'xetex) ; 设置 XeLaTeX 引擎
+  (setq TeX-auto-save t) ; 启用自动保存
+  (setq TeX-parse-self t) ; 启用自动解析
+  (setq TeX-PDF-mode t) ; 默认生成 PDF 输出
+  (setq TeX-command-default "XeLaTeX") ; 默认使用 XeLaTeX 编译命令
+  (setq-default TeX-engine 'xetex) ; 设置默认 TeX 引擎为 XeLaTeX
   (add-to-list 'TeX-command-list
-               '("XeLaTeX" "xelatex -synctex=1 %s" TeX-run-command nil t)
-               t) ; 确保 XeLaTeX 在列表开头
-  
-  ;; 使用 GNOME 的 PDF 查看器（如 Evince）
-  (setq TeX-view-program-selection '((output-pdf "Evince")))
-  (setq TeX-view-program-list
-        '(("Evince" "evince --page-index=%(outpage) %o"))))
+               '("XeLaTeX" "xelatex -synctex=1 -interaction=nonstopmode %s" TeX-run-command nil t :help "Run XeLaTeX on LaTeX file")
+               t) ; 添加 XeLaTeX 命令，确保在列表开头
+  ;; 使用 PDF Tools 预览
+  (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
+  (setq TeX-view-program-list '(("PDF Tools" TeX-pdf-tools-sync-view)))
+  (setq TeX-source-correlate-mode t) ; 启用 SyncTeX 支持
+  (setq TeX-source-correlate-start-server t) ; 启动 SyncTeX 服务器以支持正反向搜索
+  ;; 确保 PDF Tools 在加载时初始化
+  (with-eval-after-load 'pdf-tools
+    (pdf-tools-install :no-query)))
+
+(use-package pdf-tools
+  :ensure t
+  :mode ("\\.pdf\\'" . pdf-view-mode)
+  :config
+  (pdf-tools-install))
    
 ;; 定义目标文件的完整路径
 (defvar my/dashboard-file (expand-file-name "~/.config/emacs/dashboard.org"))

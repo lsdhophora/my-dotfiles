@@ -11,7 +11,7 @@
       owner = "iDvel";
       repo = "rime-ice";
       rev = "main";
-      sha256 = "sha256-iL5QMWxc93Avy/MuZ+MgT5GCbuGyv8s0rKD7U9eTGX8=";
+      sha256 = "sha256-nPkwX5ruvCkQZ4yKNVuh72RmbLiEs/lkjb7mPQURVWw=";
     };
     recursive = true;
   };
