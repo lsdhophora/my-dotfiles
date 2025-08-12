@@ -149,6 +149,7 @@
     enableDefaultPackages = true;
     packages = with pkgs; [
       noto-fonts-cjk-sans
+      noto-fonts-cjk-serif-static
       noto-fonts
       noto-fonts-extra
       noto-fonts-emoji
