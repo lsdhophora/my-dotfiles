@@ -61,8 +61,8 @@
       geary # email reader
       gedit # text editor
       gnome-characters
-      gnome-photos
       gnome-tour
+      gnome-photos
       hitori # sudoku game
       iagno # go game
       tali # poker game

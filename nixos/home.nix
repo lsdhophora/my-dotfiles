@@ -80,4 +80,17 @@
       ${pkgs.findutils}/bin/find "$HOME/.config/ibus/rime" -maxdepth 1 -not -name 'rime_ice.userdb' -not -name 'ibus_rime.yaml' -exec rm -rf {} +
     fi
   '';
+
+  home.packages = with pkgs; [
+    gnomeExtensions.paperwm # 如果存在于 Nixpkgs
+  ];
+
+  # 启用 Gnome 扩展
+  dconf.settings = {
+    "org/gnome/shell" = {
+      enabled-extensions = [
+        "paperwm@paperwm.github.com" # 替换为 PaperWM 的扩展 UUID
+      ];
+    };
+  };
 }

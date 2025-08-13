@@ -42,7 +42,8 @@
          (nix-mode . corfu-mode))
   :config
   (setq corfu-auto t)           ; Enable auto-completion
-  (setq corfu-auto-delay 0.2))
+  (setq corfu-auto-delay 0.2)
+  (setq corfu-auto-prefix 1))
 
 (use-package tex
   :ensure auctex
@@ -89,21 +90,20 @@
 
 (use-package nix-mode
   :ensure t
-  :mode "\\.nix\\'"
   :hook
   (nix-mode . eglot-ensure)
-  (nix-mode . corfu-mode)
-  (nix-mode . (lambda ()
-                (add-hook 'before-save-hook
-                          (lambda ()
-                            (when (and buffer-file-name
-                                       (eq major-mode 'nix-mode))
-                              (call-process "nixfmt" nil 0 nil buffer-file-name)))
-                          nil :local)))
+  (nix-mode . corfu-mode) ;; So that envrc mode will work
+  (before-save . (lambda () (when (eq major-mode 'nix-mode) (eglot-format-buffer))))
   :config
-  (with-eval-after-load 'eglot
-    (add-to-list 'eglot-server-programs '(nix-mode . ("nixd")))))
- 
+  (add-to-list 'eglot-server-programs
+               '(nix-mode . ("nixd" "--inlay-hints=false")))
+  (setq eglot-nix-server-path "nixd"
+        eglot-nix-formatting-command ["nixfmt"]
+        eglot-nix-nixpkgs-expr "import <nixpkgs> { }"
+        eglot-nix-nixos-options-expr "(builtins.getFlake \"/home/nb/nixos\").nixosConfigurations.mnd.options"
+        eglot-nix-home-manager-options-expr "(builtins.getFlake \"/home/nb/nixos\").homeConfigurations.\"nb@mnd\".options"))
+
+
 (use-package magit
   :ensure t
   :bind (("C-x g" . magit-status))
