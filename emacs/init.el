@@ -1,5 +1,4 @@
 ;; 基本设置
-;; 自定义 initial-buffer-choice
 (setq initial-buffer-choice
       (lambda ()
         (if (or (buffer-file-name)
@@ -7,60 +6,61 @@
             (current-buffer)
           (find-file "~/.config/emacs/dashboard.org"))))
 
+;; Load custom file if it exists
 (setq custom-file "~/.config/emacs/custom.el")
-(load custom-file 'noerror)
+(when (file-exists-p custom-file)
+  (load custom-file :noerror))
+
+;; Disable auto-save for dashboard.org
 (add-hook 'find-file-hook
           (lambda ()
-            (when (string= (buffer-file-name) (expand-file-name "~/.config/emacs/dashboard.org"))
+            (when (and (buffer-file-name)
+                       (string= (buffer-file-name) (expand-file-name "~/.config/emacs/dashboard.org")))
               (setq-local auto-save-default nil))))
 
 ;; 禁用工具栏和滚动条
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 
-;; 设置包源（使用中国镜像加速）
+;; 设置包源
 (setq package-archives '(("gnu" . "https://mirrors.ustc.edu.cn/elpa/gnu/")
                          ("melpa" . "https://mirrors.ustc.edu.cn/elpa/melpa/")
                          ("nongnu" . "https://mirrors.ustc.edu.cn/elpa/nongnu/")))
 (package-initialize)
 
-;; 安装和配置 lsp-mode（仅用于 LaTeX）
-(use-package lsp-mode
+;; 安装和配置 eglot
+(use-package eglot
   :ensure t
-  :hook (LaTeX-mode . lsp) ; 仅在 LaTeX 模式启用 lsp
   :config
-  (setq lsp-tex-server 'texlab) ; LaTeX 使用 texlab
-  (setq lsp-enable-symbol-highlighting t) ; 高亮当前符号
-  (setq lsp-enable-links t) ; 启用超链接（如 \include）
-  (setq lsp-response-timeout 10)) ; 响应超时时间
+  (setq eglot-sync-connect 5)
+  (setq eglot-autoshutdown t)
+  (setq corfu-auto-delay 0.2))
 
-;; 启用 company-mode 进行补全
-(use-package company
+(use-package corfu
   :ensure t
-  :hook (LaTeX-mode . company-mode) ; 仅在 LaTeX 模式启用补全
+  :hook ((LaTeX-mode . corfu-mode)
+         (nix-mode . corfu-mode))
   :config
-  (setq company-idle-delay 0.2) ; 补全延迟
-  (setq company-minimum-prefix-length 1) ; 最小前缀长度
-  (add-to-list 'company-backends 'company-capf)) ; 使用 lsp 补全后端
+  (setq corfu-auto t)           ; Enable auto-completion
+  (setq corfu-auto-delay 0.2))
 
-;; LaTeX 配置（AUCTeX）
 (use-package tex
   :ensure auctex
+  :hook ((LaTeX-mode . corfu-mode)
+         (LaTeX-mode . eglot-ensure))
   :config
-  (setq TeX-auto-save t) ; 启用自动保存
-  (setq TeX-parse-self t) ; 启用自动解析
-  (setq TeX-PDF-mode t) ; 默认生成 PDF 输出
-  (setq TeX-command-default "XeLaTeX") ; 默认使用 XeLaTeX 编译命令
-  (setq-default TeX-engine 'xetex) ; 设置默认 TeX 引擎为 XeLaTeX
+  (setq TeX-auto-save t)
+  (setq TeX-parse-self t)
+  (setq TeX-PDF-mode t)
+  (setq TeX-command-default "XeLaTeX")
+  (setq-default TeX-engine 'xetex)
   (add-to-list 'TeX-command-list
                '("XeLaTeX" "xelatex -synctex=1 -interaction=nonstopmode %s" TeX-run-command nil t :help "Run XeLaTeX on LaTeX file")
-               t) ; 添加 XeLaTeX 命令，确保在列表开头
-  ;; 使用 PDF Tools 预览
+               t)
   (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
   (setq TeX-view-program-list '(("PDF Tools" TeX-pdf-tools-sync-view)))
-  (setq TeX-source-correlate-mode t) ; 启用 SyncTeX 支持
-  (setq TeX-source-correlate-start-server t) ; 启动 SyncTeX 服务器以支持正反向搜索
-  ;; 确保 PDF Tools 在加载时初始化
+  (setq TeX-source-correlate-mode t)
+  (setq TeX-source-correlate-start-server t)
   (with-eval-after-load 'pdf-tools
     (pdf-tools-install :no-query)))
 
@@ -69,44 +69,43 @@
   :mode ("\\.pdf\\'" . pdf-view-mode)
   :config
   (pdf-tools-install))
-   
-;; 定义目标文件的完整路径
+
+;; 定义 dashboard 文件路径
 (defvar my/dashboard-file (expand-file-name "~/.config/emacs/dashboard.org"))
 
-;; 修改后的自定义函数（使用 :around advice）
+;; 修改 org-open-file 为全屏 dired
 (defun my/org-open-file-dired-full-window (orig-fun path &optional in-emacs line search)
   "在 dashboard 文件中打开目录时全屏显示 dired，其他情况使用默认行为。"
-  (if (and (buffer-file-name) ; 确保当前 buffer 有关联的文件
-       (string= (buffer-file-name) my/dashboard-file)
-       (file-directory-p path))
+  (if (and (buffer-file-name)
+           (string= (buffer-file-name) my/dashboard-file)
+           (file-directory-p path))
       (progn
         (delete-other-windows)
         (dired path))
-    ;; 非目标文件或非目录：调用原始函数
     (funcall orig-fun path in-emacs line search)))
 
-;; 添加条件化建议（使用 :around 类型）
 (with-eval-after-load 'org
   (advice-add 'org-open-file :around #'my/org-open-file-dired-full-window))
 
 (use-package nix-mode
   :ensure t
   :mode "\\.nix\\'"
-  :hook ((nix-mode . lsp-deferred)
-         (nix-mode . (lambda () (add-hook 'before-save-hook #'lsp-format-buffer nil t))))
+  :hook
+  (nix-mode . eglot-ensure)
+  (nix-mode . corfu-mode)
+  (nix-mode . (lambda ()
+                (add-hook 'before-save-hook
+                          (lambda ()
+                            (when (and buffer-file-name
+                                       (eq major-mode 'nix-mode))
+                              (call-process "nixfmt" nil 0 nil buffer-file-name)))
+                          nil :local)))
   :config
-  (require 'lsp-mode)
-  (setq lsp-enable-snippet nil)
-  (lsp-register-client
-   (make-lsp-client
-    :new-connection (lsp-stdio-connection "nil")
-    :major-modes '(nix-mode)
-    :priority 0
-    :server-id 'nil))
-  (setq lsp-nix-nil-formatting-command '("nixfmt")))
-
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs '(nix-mode . ("nixd")))))
+ 
 (use-package magit
   :ensure t
-  :bind (("C-x g" . magit-status))  ;; 绑定 C-x g 到 magit-status
+  :bind (("C-x g" . magit-status))
   :config
-  (setq magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+  (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
