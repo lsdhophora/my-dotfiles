@@ -114,7 +114,7 @@
     '';
   };
 
-  programs.firefox.enable = true;
+  # programs.firefox.enable = true;
 
   # List packages installed in system profile.
   # You can use https://search.nixos.org/ to find more packages (and options).
@@ -148,7 +148,7 @@
   fonts = {
     enableDefaultPackages = true;
     packages = with pkgs; [
-      noto-fonts-cjk-sans
+      noto-fonts-cjk-sans-static
       noto-fonts-cjk-serif-static
       noto-fonts
       noto-fonts-extra
