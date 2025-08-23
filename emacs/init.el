@@ -18,6 +18,11 @@
                        (string= (buffer-file-name) (expand-file-name "~/.config/emacs/dashboard.org")))
               (setq-local auto-save-default nil))))
 
+;; 检测是否在终端下运行
+(when (not (display-graphic-p))
+  ;; 禁用所有已加载的主题
+  (mapc #'disable-theme custom-enabled-themes))
+
 ;; 禁用工具栏和滚动条
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
@@ -109,3 +114,8 @@
   :bind (("C-x g" . magit-status))
   :config
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
+
+(setq org-latex-compiler "xelatex")
+(setq org-latex-pdf-process '("xelatex -interaction nonstopmode -output-directory %o %f"
+                              "xelatex -interaction nonstopmode -output-directory %o %f"))
+
