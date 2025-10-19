@@ -1,4 +1,4 @@
-;; 基本设置
+;;基本设置
 (setq initial-buffer-choice
       (lambda ()
         (if (or (buffer-file-name)
@@ -18,10 +18,16 @@
                        (string= (buffer-file-name) (expand-file-name "~/.config/emacs/dashboard.org")))
               (setq-local auto-save-default nil))))
 
-;; 检测是否在终端下运行
-(when (not (display-graphic-p))
-  ;; 禁用所有已加载的主题
-  (mapc #'disable-theme custom-enabled-themes))
+(add-hook 'after-init-hook
+          (lambda ()
+            (when (display-graphic-p)
+              (set-face-attribute 'default nil :height 120) ; 字体大小 12 点
+              ;; 设置中文字符的字体为 Noto Sans CJK SC
+              (set-fontset-font t 'han "Noto Sans CJK SC-12" nil 'prepend)
+              ;; 设置全角符号的字体为 Noto Sans CJK SC
+              (set-fontset-font t '(#xFF00 . #xFFEF) "Noto Sans CJK SC-12" nil 'prepend)
+              (load-theme 'modus-vivendi t))))
+
 
 ;; 禁用工具栏和滚动条
 (tool-bar-mode -1)
@@ -56,12 +62,11 @@
          (LaTeX-mode . eglot-ensure))
   :config
   (setq TeX-auto-save t)
-  (setq TeX-parse-self t)
   (setq TeX-PDF-mode t)
-  (setq TeX-command-default "XeLaTeX")
-  (setq-default TeX-engine 'xetex)
+  (setq TeX-command-default "LuaLaTeX")
+  (setq-default TeX-engine 'luatex)
   (add-to-list 'TeX-command-list
-               '("XeLaTeX" "xelatex -synctex=1 -interaction=nonstopmode %s" TeX-run-command nil t :help "Run XeLaTeX on LaTeX file")
+               '("LuaLaTeX" "lualatex -synctex=1 -interaction=nonstopmode %s" TeX-run-command nil t :help "Run LuaLaTeX on LaTeX file")
                t)
   (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
   (setq TeX-view-program-list '(("PDF Tools" TeX-pdf-tools-sync-view)))
@@ -115,7 +120,49 @@
   :config
   (setq magit-display-buffer-function #'magit-display-buffer-fullframe-status-v1))
 
-(setq org-latex-compiler "xelatex")
-(setq org-latex-pdf-process '("xelatex -interaction nonstopmode -output-directory %o %f"
-                              "xelatex -interaction nonstopmode -output-directory %o %f"))
+(use-package nov
+  :ensure t
+  :mode ("\\.epub\\'" . nov-mode))
 
+(when (boundp 'native-comp-async-report-warnings)
+  (setq native-comp-async-report-warnings '(error)))
+
+(use-package corfu-terminal
+  :ensure t
+  :config
+  (unless (display-graphic-p)  ; 仅在终端（非图形界面）启用
+    (corfu-terminal-mode 1)))
+
+(defun my-pdf-annot-print-annotation-header-advice (orig-fun a)
+  "Advice to remove 'subject' from the annotation header."
+  (let ((header
+         (cond
+          ((eq 'file (pdf-annot-get a 'type))
+           (let ((att (pdf-annot-get-attachment a)))
+             (format "File attachment `%s' of %s"
+                     (or (cdr (assq 'filename att)) "unnamed")
+                     (if (cdr (assq 'size att))
+                         (format "size %s" (file-size-human-readable
+                                            (cdr (assq 'size att))))
+                       "unknown size"))))
+          (t
+           (format "%s"
+                   (mapconcat
+                    #'identity
+                    (mapcar
+                     (lambda (property)
+                       (pdf-annot-print-property a property))
+                     `(label modified))  ; Exclude subject
+                    ";"))))))
+    (propertize header 'face 'header-line
+                'intangible t 'read-only t
+                'display (propertize header 'face 'header-line))))
+
+;; Remove any existing advice to avoid conflicts
+(advice-remove 'pdf-annot-print-annotation-header 'my-pdf-annot-print-annotation-header-advice)
+
+;; Apply the corrected advice
+(advice-add 'pdf-annot-print-annotation-header :around #'my-pdf-annot-print-annotation-header-advice)
+
+(setq pdf-annot-default-annotation-properties
+      '((t (label . "lophophora"))))

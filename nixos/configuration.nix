@@ -45,10 +45,6 @@
   # Set your time zone.
   time.timeZone = "Asia/Shanghai";
 
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
-  services.xserver.excludePackages = [ pkgs.xterm ];
-
   # Enable the GNOME Desktop Environment.
   services.displayManager.gdm.enable = true;
   services.desktopManager.gnome.enable = true;
@@ -80,6 +76,7 @@
     shell = pkgs.fish;
     packages = with pkgs; [
       tree
+      ffmpeg
       fastfetch
       imagemagick
       wl-clipboard
@@ -122,10 +119,13 @@
     nano
     git
     wget
+    gnome-sound-recorder
     texlive.combined.scheme-full
     texlab
     inputs.agenix.packages."${system}".default
     nixd
+    power-profiles-daemon
+    unzip
     nixfmt
   ];
 
@@ -169,7 +169,7 @@
     enable = true;
     type = "ibus";
     ibus.engines = with pkgs.ibus-engines; [
-      rime
+      libpinyin
     ];
   };
 
@@ -206,6 +206,14 @@
   nix.extraOptions = ''
     !include ${config.age.secrets.access-tokens-github.path}
   '';
+
+  programs.dconf.profiles.gdm.databases = [
+    {
+      settings."org/gnome/desktop/interface" = {
+        text-scaling-factor = 1.42;
+      };
+    }
+  ];
 
   system.stateVersion = "25.05";
 }
